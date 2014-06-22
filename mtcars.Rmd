@@ -1,0 +1,274 @@
+Effects of Vehicle Transmission Type on Fuel Efficiency
+=======================================================
+### Executive Summary  
+Data analysis suggests that cars with manual transmission have better fuel efficiency compared to those with automatic transmission. Including weight in the regression model brought us to conclusion that this is actually to a great extend effect of the car's weight as a confounding variable. Cars with automatic transmission are heavier and have lower MPG than cars with manual transmission, so we cannot quantify how different is fuel efficiency taking into consideration just transmission type, in this case there is very small difference in MPG between automatic and manual cars. Adding the interaction between weight and transmission types in the model and comparing MPG between cars with manual and automatic transmission with same weight we see more significant positive difference. The last model where MPG is quantified with transmission type, weight, interaction between weight and transmission, and horse power as explanatory variables, shows significant positive difference of MPG between cars with manual and automatic transmission with same weight and horsepower. Generally cars with more horsepower have poorer fuel efficiency than those with less horsepower.  
+
+### Introduction
+The purpose of this analysis is to investigate which type of transmission is better in respect of fuel efficiency and to quantify how different is fuel efficiency between automatic and manual transmission. The analysis is done with data sample **mtcars** available in {datasets} package.
+
+> The data was extracted from the 1974 Motor Trend US magazine, and comprises fuel consumption and 10 aspects of automobile design and performance for 32 automobiles (1973-74 models).[1] 
+```{r echo=FALSE}
+library(datasets)
+data(mtcars)
+```
+
+### Exploratory Analysis  
+Dataset comprises of 32 observations on 11 variables. 6 of the variables are continuous numerical: fuel efficiency in miles per gallon (mpg), engine displacement in cubic inches (disp), gross horsepower(hp), rear axle ratio (drat), car's weight (wt) in 1000 pounds and quarter mile time (qsec). The rest 5 are categorical variables: number of cylinders (cyl), V/straight engine (vs), transmission type (am; 0-automatic, 1-manual), number of forward gears (gear) and number of carburetors (carb). In this phase variables were investigated plotting histograms, boxplots and qq plots for continuous numeric variables (Fig. 1) and bar plots for categorical variables(Fig 2).   
+Quarter mile time variable is approximately normally distributed; horse power and engine displacement show trend of right skew; fuel efficiency, weight and rear axle ratio show some elements of multimodality following the trend of the bell curve. There are outlier observations in horse power and quarter time variables.  
+In order to investigate the relationship between fuel efficiency and other parameters matrix of scatterplots is generated (Fig. 3). None of the graphs in the matrix show a perfectly linear relationship however, a line does reasonably estimate the average change in MPG for all 5 continuous variables.  
+
+### Statistical Modeling
+To relate fuel efficiency to transmission type we performed a standard simple and multivariate
+linear regression models. Model selection was performed on the basis of our exploratory
+analysis and questions of interest. Coefficients were estimated with ordinary least squares and standard errors were calculated using standard asymptotic approximations.  
+
+### Reproducibility
+All analyses performed in this manuscript are reproduced in the R markdown file mtcars.Rmd available on Github [https://github.com/CrazyFarang/RegressionModelsProject].  
+
+### Results
+We first fit unadjusted regression model relating fuel efficiency and transmission type.  
+
+>mpg=$\beta_0$+$\beta_1$*1(am="Manual")+e  
+```{r echo=FALSE}
+m0<-lm(mpg~as.factor(am),data=mtcars)
+summary(m0)$coefficients
+```
+where $\beta_0$=`r round(summary(m0)$coefficients[1,1],2)`, 95% CI(`r round(confint(m0,level=0.95)[1,1],2)`,`r round(confint(m0,level=0.95)[1,2],2)`) is average value of miles per gallon for cars(MPG) with automatic transmission, $\beta_1$=`r round(summary(m0)$coefficients[2,1],2)`, 95% CI(`r round(confint(m0,level=0.95)[2,1],2)`,`r round(confint(m0,level=0.95)[2,2],2)`) is estimated expected change in MPG for cars with manual transmission and error term *e* represents all sources of unmeasured and unmodeled random variation in MPG (Fig. 4) In this model transmission type is statistically significant predictor of MPG (`r summary(m0)$coefficients[2,4]`), but the model has very poor power of prediction, it explains just `r round(summary(m0)$adj.r.squared * 100,0)` % of the variability in MPG. Residual analysis (Fig. 5) shows a pattern in residual versus dependent and fitted variable, almost normal distribution of residuals. Influence measures analysis doesn't point to high leverage observation in this model.  
+In order to quantify fuel efficiency we need to fit multivariable model. Second model we fit is adding vehicle's weight into initial simple regression model in order to show that weight is confounding variable high negatively correlated both with transmission type (r=`r cor(mtcars$wt,mtcars$am)`) as dependent variable and MPG as response variable (r=`r cor(mtcars$mpg,mtcars$wt)`).  We fit the model  
+
+>mpg=$\beta_0$+$\beta_1$*1(am="Manual")+$\beta_2$*wt+e, 
+```{r echo=FALSE}
+m1<-lm(mpg~as.factor(am)+wt,data=mtcars)
+summary(m1)$coefficients
+```
+where $\beta_0$=`r round(summary(m1)$coefficients[1,1],2)`, 95% CI(`r round(confint(m1,level=0.95)[1,1],2)`,`r round(confint(m1,level=0.95)[1,2],2)`) is expected value of MPG for automatic cars with weight 0 pounds,  $\beta_1$=`r round(summary(m1)$coefficients[2,1],2)`, 95% CI(`r round(confint(m1,level=0.95)[2,1],2)`,`r round(confint(m1,level=0.95)[2,2],2)`) is estimated expected change in MPG for cars with manual transmission and weight 0 pounds($\beta_0$+$\beta_1$ is expected value of MPG for cars with manual trnasmission and weight 0 pounds), $\beta_2$=`r round(summary(m1)$coefficients[3,1],2)`, 95% CI(`r round(confint(m1,level=0.95)[3,1],2)`,`r round(confint(m1,level=0.95)[3,2],2)`) is expected change in MPG for 1 lb/1000 change in weight for either automatic or manual transmission and error term *e* represents all sources of unmeasured and unmodeled random variation in MPG. (Fig. 6) Transmission type in this model is not longer statistically significant predictor of MPG (p=(`r round(summary(m1)$coefficients[2,4],2)`), the two regression lines for automatic and manual transmission almost overlap, so the only predictor of MPG is actually the confounding variable - weight. Cars with automatic transmission are heavier and have worse fuel efficiency than cars with manual transmission which have bigger MPG. This model explains `r round(summary(m1)$adj.r.squared * 100,0)` % of the variability in MPG, much better than the previous one, but that is not result of the transmission type, rather than the weight. Residual analysis (Fig. 7) shows random trend in residual versus fitted values, distribution of residuals is not quite normal. Influence measures analysis doesn't point to high leverage observations in this model.  
+The third model adds interaction of weight and transmission to the second model.  
+
+>mpg=$\beta_0$+$\beta_1$*1(am="Manual")+$\beta_2$*wt+$\beta_3$*1(am="Manual")*wt+e
+```{r echo=FALSE}
+m2<-lm(mpg~as.factor(am)+wt+wt*as.factor(am),data=mtcars)
+summary(m2)$coefficients
+```
+Estimated values of regression coefficients and their 95% confidence intervals: $\beta_0$=`r round(summary(m2)$coefficients[1,1],2)`, 95% CI(`r round(confint(m2,level=0.95)[1,1],2)`,`r round(confint(m2,level=0.95)[1,2],2)`);$\beta_1$=`r round(summary(m2)$coefficients[2,1],2)`, 95% CI(`r round(confint(m2,level=0.95)[2,1],2)`,`r round(confint(m2,level=0.95)[2,2],2)`);$\beta_2$=`r round(summary(m2)$coefficients[3,1],2)`, 95% CI(`r round(confint(m2,level=0.95)[3,1],2)`,`r round(confint(m2,level=0.95)[3,2],2)`);$\beta_3$=`r round(summary(m2)$coefficients[4,1],2)`, 95% CI(`r round(confint(m2,level=0.95)[4,1],2)`,`r round(confint(m2,level=0.95)[4,2],2)`). $\beta_0$ is expected value of MPG for automatic cars with weight 0 pounds; $\beta_0$ + $\beta_1$ is expected value of MPG for cars with manual transmission and weight 0 pounds; $\beta_2$ is expected change in MPG for 1 lb/1000 change in weight of automatic cars; $\beta_2$+$\beta_3$ is expected change in MPG for 1 lb/1000 change in weight of cars with manual transmission and *e* is everything we didn't measure. (Fig. 8) Interaction of transmission type and weight brings change in quantifying MPG, regression lines for the two types of transmission are not overlapping anymore, neither they are parallel. Transmission type in this model is statistically significant predictor of MPG (p=`r summary(m2)$coefficients[2,4]`) and this model explains `r round(summary(m2)$adj.r.squared * 100,0)` % of the variability in MPG. Residual analysis (Fig. 9) shows random trend in the relationship of residuals and fitted values, distribution looks more like normal compared with the previous model. Influence measures analysis doesn't point to high leverage observations in this model.   
+```{r echo=FALSE,results='hide'}
+m01<-lm(mpg~as.factor(am)+as.factor(cyl),data=mtcars)
+summary(m01)$coefficients
+AIC(m01)
+m02<-lm(mpg~as.factor(am)+disp,data=mtcars)
+summary(m02)$coefficients
+AIC(m02)
+m03<-lm(mpg~as.factor(am)+log10(hp),data=mtcars)
+summary(m03)$coefficients
+AIC(m03)
+m04<-lm(mpg~as.factor(am)+drat,data=mtcars)
+summary(m04)$coefficients
+AIC(m04)
+m05<-lm(mpg~as.factor(am)+wt,data=mtcars)
+summary(m05)$coefficients
+AIC(m05)
+m06<-lm(mpg~as.factor(am)+qsec,data=mtcars)
+summary(m06)$coefficients
+AIC(m06)
+m07<-lm(mpg~as.factor(am)+as.factor(vs),data=mtcars)
+summary(m07)$coefficients
+AIC(m07)
+m08<-lm(mpg~as.factor(am)+as.factor(gear),data=mtcars)
+summary(m08)$coefficients
+AIC(m08)
+m09<-lm(mpg~as.factor(am)+as.factor(carb),data=mtcars)
+summary(m09)$coefficients
+AIC(m09)
+m11<-lm(mpg~as.factor(am)+log10(hp)+as.factor(cyl),data=mtcars)
+summary(m11)
+AIC(m11)
+m12<-lm(mpg~as.factor(am)+log10(hp)+disp,data=mtcars)
+summary(m12)
+AIC(m12)
+m13<-lm(mpg~as.factor(am)+log10(hp)+drat,data=mtcars)
+summary(m13)
+AIC(m13)
+m14<-lm(mpg~as.factor(am)+log10(hp)+wt,data=mtcars)
+summary(m14)
+AIC(m14)
+m15<-lm(mpg~as.factor(am)+log10(hp)+qsec,data=mtcars)
+summary(m15)
+AIC(m15)
+m16<-lm(mpg~as.factor(am)+log10(hp)+as.factor(gear),data=mtcars)
+summary(m16)
+AIC(m16)
+m17<-lm(mpg~as.factor(am)+log10(hp)+as.factor(carb),data=mtcars)
+summary(m17)
+AIC(m17)
+```
+Last we fit the model using forward selection method of p values [2], starting with model that includes just the transmission type of the vehicle. We also observe Akaike's information criterion (AIC) [3] for the fitted model, and it seems that corresponds with the p value selection. The idea is to keep transmission type statistically significant and add some other predictors that are good quantifiers of fuel efficiency(MPG). In the first step the selection is horse power, so we add logarithmic transformation of horse power variable (remember it was right skewed). In the second we select the weight, and since the weight is confounding variable, we additionally add the interaction between the weight and transmission type. So according this approach the model that best quantifies MPG keeping the transmission variable statistically significant is following (Fig. 10):  
+
+>mpg=$\beta_0$+$\beta_1$*1(am="Manual")+$\beta_2$*log10(hp)+$\beta_3$*wt +$\beta_4$*1(am="Manual")*wt +e,  
+```{r echo=FALSE}
+m3<-lm(mpg~as.factor(am)+log10(hp)+wt+wt*as.factor(am),data=mtcars)
+summary(m3)$coefficients
+```
+Estimated values of regression coefficients and their 95% confidence intervals: $\beta_0$=`r round(summary(m3)$coefficients[1,1],2)`, 95% CI(`r round(confint(m3,level=0.95)[1,1],2)`,`r round(confint(m3,level=0.95)[1,2],2)`);$\beta_1$=`r round(summary(m3)$coefficients[2,1],2)`, 95% CI(`r round(confint(m3,level=0.95)[2,1],2)`,`r round(confint(m3,level=0.95)[2,2],2)`);$\beta_2$=`r round(summary(m3)$coefficients[3,1],2)`, 95% CI(`r round(confint(m3,level=0.95)[3,1],2)`,`r round(confint(m3,level=0.95)[3,2],2)`);$\beta_3$=`r round(summary(m3)$coefficients[4,1],2)`, 95% CI(`r round(confint(m3,level=0.95)[4,1],2)`,`r round(confint(m3,level=0.95)[4,2],2)`); $\beta_4$=`r round(summary(m3)$coefficients[5,1],2)`, 95% CI(`r round(confint(m3,level=0.95)[5,1],2)`,`r round(confint(m3,level=0.95)[5,2],2)`). $\beta_0$ is expected MPG of car with automatic transmission, weight 0 pounds and horse power 1, $\beta_1$ is expected change in MPG in cars with manual transmission, weight 0 pounds and horse power 1, $\beta_2$ is expected change in MPG with change of 1 unit in log base 10 of horse power for cars holding all other predictors constant, $\beta_3$ is expected change in MPG for automatic cars with one unit change (1lb/1000) of weight holding horse power constant, $\beta_4$ is expected change of change of MPG for manual cars  with one unit change (1lb/1000) of weight holding horse power constant and *e* is error term comprising everything we didn't measure. Automatic cars have worse MPG compared to a manual car with same weight and horse power. Cars with more horsepower have poorer fuel efficiency than those with less horsepower. We observed a statistically significant (p=`r summary(m3)$coefficients[2,4]`) association between MPG and transmission type and this model explains `r  round(summary(m3)$adj.r.squared * 100,0)` % of the variability in MPG. Residuals (Fig. 11) show random pattern of variation, indicating a good fit for linear model, their distribution is approximately normal and they are homoscedastic.
+```{r echo=FALSE}
+f3 <- summary(m3)$fstatistic
+p3<-pf(f3[1],f3[2],f3[3],lower.tail=F)
+```
+The overall p value value of the model is significant (p=`r p3`), telling us that regression as a whole is performing better than any set of random predictors, the model outperforms random noice as predictor.  
+Nested model analisys shows that every subsequent model has better perfomance than the previous one.
+```{r echo=FALSE}
+mf0<-lm(mpg~as.factor(am),data=mtcars)
+mf1<-update(mf0,mpg~as.factor(am)+wt)
+mf2<-update(mf0,mpg~as.factor(am)+wt+wt*as.factor(am))
+mf3<-update(mf0,mpg~as.factor(am)+wt+wt*as.factor(am)+log10(hp))
+anova(mf0,mf1,mf2,mf3)
+```
+
+### References
+1. Motor Trend Car Road Tests. R Documentation. [http://stat.ethz.ch/R-manual/R-patched/library/datasets/html/mtcars.html]  
+2. Forward- and Backward-Stepwise Selection. [book auth.] Robert Tibshirani & Jerome Friedman Trevor Hastie. The Elements of Statistical Learning; Data Mining, Inference and Prediction. s.l. : Springer, 2013. [http://statweb.stanford.edu/~tibs/ElemStatLearn/]
+3. Akaike's Information Criterion. Wikipedia. [http://en.wikipedia.org/wiki/Akaike_information_criterion.]
+
+### Apendix
+
+Fig. 1  
+```{r fig.width=9, echo=FALSE}
+par(mfrow=c(3,6))
+boxplot(mtcars$mpg,main="Miles/(US) gallon")
+boxplot(mtcars$disp,main="Displacement (cu.in.)")
+boxplot(mtcars$hp,main="Gross horsepower")
+boxplot(mtcars$drat,main="Rear axle ratio")
+boxplot(mtcars$wt,main="Weight(lb/1000)")
+boxplot(mtcars$qsec,main="1/4 mile time")
+hist(mtcars$mpg,main="Miles/(US) gallon",breaks=10)
+hist(mtcars$disp,main="Displacement (cu.in.)")
+hist(mtcars$hp,main="Gross horsepower")
+hist(mtcars$drat,main="Rear axle ratio",breaks=10)
+hist(mtcars$wt,main="Weight(lb/1000)")
+hist(mtcars$qsec,main="1/4 mile time")
+qqnorm(mtcars$mpg,main="Miles/(US) gallon")
+qqnorm(mtcars$disp,main="Displacement (cu.in.)")
+qqnorm(mtcars$hp,main="Gross horsepower")
+qqnorm(mtcars$drat,main="Rear axle ratio")
+qqnorm(mtcars$wt,main="Weight(lb/1000)")
+qqnorm(mtcars$qsec,main="1/4 mile time")
+```
+
+Fig. 2
+
+```{r echo=FALSE, fig.height=2.5}
+par(mfrow=c(1,5))
+barplot(table(as.factor(mtcars$cyl)),main="Number of cylinders")
+barplot(table(as.factor(mtcars$vs)),main="V/S")
+barplot(table(as.factor(mtcars$am)),main="Transmission")
+barplot(table(as.factor(mtcars$gear)),main="Gears")
+barplot(table(as.factor(mtcars$carb)),main="Carburators")
+```
+
+Fig. 3
+
+```{r echo=FALSE}
+par(mfrow=c(1,1))
+pairs(mtcars, panel = panel.smooth, main = "Mtcars Data")
+```
+
+Fig. 4
+
+```{r echo=FALSE,fig.height=6}
+par(oma=c(0,0,2,0))
+par(mfrow=c(1,2))
+boxplot(mtcars$mpg~mtcars$am,ylab="Miles/US gallon",xlab="Transmission",names=c("Automatic","Manual"),col=c(2,3))
+plot(mpg~am,data=mtcars,pch=19,xlab="Transmission",ylab="Miles/US gallon",xaxt="n",col=mtcars$am+2)
+axis(1,at=c(0,1),labels=c("Automatic","Manual"))
+abline(m0,lwd=2,col="blue")
+text(0.5,20,"Regression line",col="blue",cex=0.8)
+meanA<-m0$coefficients[1]
+abline(h=meanA,lwd=2,col=2)
+text(0.5,meanA-1,paste("E[MPG|Automatic]=",round(meanA,2),sep=""),col=2,cex=0.8)
+text(0.5,meanA-2,"E[MPG|Automatic]=beta0",col=2,cex=0.8)
+meanM<-m0$coefficients[1]+m0$coefficients[2]
+abline(h=meanM,lwd=2,col=3)
+text(0.5,meanM+2,paste("E[MPG|Manual]=",round(meanM,2),sep=""),col=3,cex=0.8)
+text(0.5,meanM+1,"E[MPG|Manual]=beta0+beta1",col=3,cex=0.8)
+lines(c(0.9,0.9),c(meanA,meanM),lwd=2,col="darkgrey")
+text(0.86,21,paste("beta1=",round(meanM-meanA,2),sep=""),col="darkgrey",srt = 90,cex=0.8)
+title(main="Fuel Efficiency by Transmission",outer=TRUE)
+```
+
+Fig.5 
+
+```{r echo=FALSE,fig.height=4,fig.width=10}
+par(mfrow=c(1,5))
+plot(density(resid(m0)),main="Residuals")
+plot(m0)
+```
+
+Fig. 6
+
+```{r echo=FALSE,fig.height=5,fig.width=5}
+par(mfrow=c(1,1))
+plot(mtcars$wt,mtcars$mpg,col=mtcars$am+2,pch=19,xlab="Weight lb/1000",ylab="Fuel Efficiency (mpg)",main="Fuel Efficiency and Weight by Transmission",cex=mtcars$wt)
+abline(a=m1$coeff[1]+m1$coeff[2],b=m1$coeff[3],lwd=3,col=3)
+abline(a=m1$coeff[1],b=m1$coeff[3],lwd=4,col=2,lty=2)
+points(4,33,pch=19,col=2,cex=1.5)
+text(4.5,33,"Automatic",col=2,cex=1)
+points(4,30,pch=19,col=3,cex=1.5)
+text(4.5,30,"Manual",col=3,cex=1)
+```
+
+Fig. 7
+
+```{r echo=FALSE,fig.height=4,fig.width=10}
+par(mfrow=c(1,5))
+plot(density(resid(m1)),main="Residuals")
+plot(m1)
+```
+
+Fig. 8 
+
+```{r echo=FALSE,fig.height=5,fig.width=7}
+par(mfrow=c(1,1))
+plot(mtcars$wt,mtcars$mpg,col=mtcars$am+2,pch=19,xlab="Weight lb/1000",ylab="Fuel Efficiency (mpg)",main="Fuel Efficiency and Weight by Transmission with Interaction",cex=mtcars$wt)
+abline(a=m2$coeff[1],b=m2$coeff[3],lwd=4,col=2)
+abline(a=m2$coeff[1]+m2$coeff[2],b=m2$coeff[3]+m2$coeff[4],lwd=3,col=3)
+points(4,33,pch=19,col=2,cex=1.5)
+text(4.5,33,"Automatic",col=2,cex=1)
+points(4,30,pch=19,col=3,cex=1.5)
+text(4.5,30,"Manual",col=3,cex=1)
+```
+
+Fig. 9 
+
+```{r echo=FALSE,fig.height=4,fig.width=10}
+par(mfrow=c(1,5))
+plot(density(resid(m2)),main="Residuals")
+plot(m2)
+```
+
+Fig. 10
+
+```{r echo=FALSE,fig.height=5,fig.width=14}
+par(mfrow=c(1,2))
+plot(log10(mtcars$hp),mtcars$mpg,pch=15,col=mtcars$am+2, xlab="Horsepower in logarithmic scale of base 10",ylab="Fuel Efficiency miles/US gallon", main="Fuel Efficiency and Horsepower by Transmission",cex=mtcars$hp/50)
+abline(a=m3$coeff[1]+2*m3$coeff[4],b=m3$coeff[3],lwd=2,col=2)
+abline(a=m3$coeff[1]+m3$coeff[2]+(m3$coeff[4]+m3$coeff[5])*2,b=m3$coeff[3],lwd=2,col=3)
+text(2.2,33,"Regression lines keeping weight constant (wt=2000 lb)",col="blue")
+points(2.3,31,pch=15,col=2,cex=1.5)
+text(2.4,31,"Automatic",col=2,cex=1)
+points(2.3,30,pch=15,col=3,cex=1.5)
+text(2.4,30,"Manual",col=3,cex=1)
+plot(mtcars$wt,mtcars$mpg,col=mtcars$am+2,pch=19,xlab="Weight lb/1000",ylab="Fuel Efficiency (mpg)",main="Fuel Efficiency and weight by transmission type",cex=mtcars$wt)
+abline(a=m3$coeff[1]+m3$coeff[3]*log10(110),b=m3$coeff[4],lwd=2,col=2)
+text(4,33,"Regression lines keeping horsepower constant (hp=110)",col="blue")
+abline(a=m3$coeff[1]+m3$coeff[2] +m3$coeff[3]*log10(110),b=m3$coeff[4]+m3$coeff[5],lwd=3,col=3)
+points(4,31,pch=19,col=2,cex=1.5)
+text(4.5,31,"Automatic",col=2,cex=1)
+points(4,30,pch=19,col=3,cex=1.5)
+text(4.5,30,"Manual",col=3,cex=1)
+```
+
+Fig. 11
+
+```{r echo=FALSE,fig.height=4,fig.width=10}
+par(mfrow=c(1,5))
+plot(density(resid(m3)),main="Residuals")
+plot(m3)
+```
